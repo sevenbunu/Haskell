@@ -67,7 +67,7 @@ let word ?(point_allowed = Ban_point) req_word =
         sep_by (char '.') suitable_but_not_a_point
         >>|
         let open String in
-        concat empty
+        concat "."
     in
     if equal (Printf.sprintf "%c%s" fst_smb w) req_word
     then return req_word
@@ -81,6 +81,11 @@ let%test "word_valid" =
 let%test "word_invalid" =
   parse_string ~consume:Prefix (word "then") "thena"
   = Result.Error ": couldn't parse word 'then'"
+;;
+
+let%test "word_with_point" =
+  parse_string ~consume:Prefix (word ~point_allowed:Allow_point "List.map") "List.map"
+  = Result.Ok "List.map"
 ;;
 
 let ident =
