@@ -791,9 +791,7 @@ let function_application ex e =
   | hd :: tl -> (FunctionApply (ex, hd, tl), []) |> return
 ;;
 
-let e e =
-  oper e function_application
-;;
+let e e = oper e function_application
 
 let expr = function
   | Ban_t -> fix e
@@ -1110,6 +1108,15 @@ let%expect_test "expr_valid_tp_ite" =
            [TBool]),
           ((Const (Int 0)), [TInt]), ((Const (Int 1)), [TInt]))),
        [TUnit]) |}]
+;;
+
+let%expect_test "expr_valid_tp_lambda" =
+  prs_and_prnt_ln (expr Allow_t) show_expr "\\x -> x :: Int :: Int -> Int ";
+  [%expect
+    {|
+      ((Lambda (([], (PIdentificator (Ident "x")), []), [],
+          ((Identificator (Ident "x")), [TInt]))),
+       [(FunctionType (FuncT (TInt, TInt, [])))]) |}]
 ;;
 
 let binding = binding (expr Allow_t)
