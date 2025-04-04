@@ -289,11 +289,13 @@ let pcons_tail head ptrn_ext =
   >>| loop (fun (x : pattern) -> [], PList (PCons (head, x)), [])
 ;;
 
+let ptrn_extended ptrn ptrn_extended =
+  let* p = ptrn <|> pnegation <|> just_p ptrn in
+  option p (pcons_tail p ptrn_extended)
+;;
+
 let pat ptrn =
-  let ptrn_extended ptrn_extended =
-    let* p = ptrn <|> pnegation <|> just_p ptrn in
-    option p (pcons_tail p ptrn_extended)
-  in
+  let ptrn_extended = fix (ptrn_extended ptrn) >>= pt_tp in
   choice
     [ (let* pt = const in
        return (PConst (OrdinaryPConst pt)))
@@ -301,26 +303,20 @@ let pat ptrn =
        return (PIdentificator pt))
     ; char '_' *> return PWildcard
     ; nothing (return (PMaybe Nothing))
-    ; tree
-        (ws *> fix ptrn_extended >>= pt_tp)
-        (return (PTree PNul))
-        (fun d t1 t2 -> return (PTree (PNode (d, t1, t2))))
-    ; list_enum (fix ptrn_extended >>= pt_tp) (fun pts -> return (PList (PEnum pts)))
+    ; tree ptrn_extended (return (PTree PNul)) (fun d t1 t2 ->
+        return (PTree (PNode (d, t1, t2))))
+    ; list_enum ptrn_extended (fun pts -> return (PList (PEnum pts)))
     ]
 ;;
 
 let ptrn ptrn =
-  let ptrn_extended ptrn_extended =
-    let* p = ptrn <|> pnegation <|> just_p ptrn in
-    option p (pcons_tail p ptrn_extended)
-  in
   choice
     [ (let* ident = ident in
        char '@' *> (ptrn >>= fun (idents, pat, tp) -> return (ident :: idents, pat, tp)))
     ; (let* pat = pat ptrn in
        return ([], pat, []))
     ; tuple_or_parensed_item
-        (fix ptrn_extended >>= pt_tp)
+        (fix (ptrn_extended ptrn) >>= pt_tp)
         (fun p1 p2 pp -> return ([], PTuple (p1, p2, pp), []))
         return
     ]
@@ -339,10 +335,7 @@ let pattern unp_ps_h unp_tp_h =
   match unp_ps_h with
   | Ban_p -> p
   | Allow_p ->
-    let ptr' ptr' =
-      p <|> pnegation <|> just_p p >>= fun hd -> option hd (pcons_tail hd ptr')
-    in
-    fix ptr'
+    fix (ptrn_extended p)
     >>=
       (match unp_tp_h with
       | Ban_t -> return
