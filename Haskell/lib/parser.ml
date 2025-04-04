@@ -533,7 +533,7 @@ let ex_tp ((e, tps) as ex) = option ex (oper "::" **> tp >>| fun tp -> e, tp :: 
 
 let defbody e sep =
   (sep
-   **> let* ex = e >>= ex_tp in
+   **> let* ex = e in
        return (OrdBody ex))
   <|>
   let* ee_pairs =
@@ -541,7 +541,7 @@ let defbody e sep =
       (oper "|"
        **> let* ex1 = e in
            sep
-           **> let* ex2 = e >>= ex_tp in
+           **> let* ex2 = e in
                return (ex1, ex2))
   in
   match ee_pairs with
@@ -1183,6 +1183,12 @@ let%expect_test "fun_binding_guards" =
                [(((Identificator (Ident "otherwise")), []), ((Const (Int 1)), []))]
                )),
             []))) |}]
+;;
+
+let%expect_test "bnd_invlid_tp" =
+  prs_and_prnt_ln ~consume:Consume.All binding show_binding "f x = 1 :: Int :: Int";
+  [%expect {|
+      error: : end_of_input |}]
 ;;
 
 let%expect_test "decl" =
