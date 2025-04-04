@@ -793,8 +793,6 @@ let function_application ex e =
 
 let e e =
   oper e function_application
-  <|> other_expr e function_application
-  >>= fun ex -> function_application ex e <|> return ex
 ;;
 
 let expr = function
@@ -899,7 +897,7 @@ let%expect_test "expr_with_non-assoc_op_simple" =
 let%expect_test "expr_with_non-assoc_ops_invalid" =
   prs_and_prnt_ln (expr Allow_t) show_expr "x == y + 1 >= z";
   [%expect {|
-      ((Identificator (Ident "x")), []) |}]
+      error: : |}]
 ;;
 
 let%expect_test "expr_with_non-assoc_ops_valid" =
@@ -1011,7 +1009,7 @@ let%expect_test "expr_tuple_neg" =
 let%expect_test "expr_lambda_invalid_neg" =
   prs_and_prnt_ln (expr Allow_t) show_expr " \\ -1 -> 1";
   [%expect {|
-      error: : no more choices |}]
+      error: : |}]
 ;;
 
 let%expect_test "expr_case_neg" =
@@ -1099,7 +1097,7 @@ let%expect_test "expr_binop_invlid_tp" =
       ((Binop (((Const (Int 1)), []), Plus, ((Const (Int 2)), []))), [TInt]) |}]
 ;;
 
-let%expect_test "expr_valid_tp" =
+let%expect_test "expr_valid_tp_ite" =
   prs_and_prnt_ln
     (expr Allow_t)
     show_expr
